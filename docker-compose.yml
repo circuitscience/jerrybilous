@@ -1,0 +1,53 @@
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: jerry_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: jerry_bil_jb
+      MYSQL_USER: jerry_bil_jb
+      MYSQL_PASSWORD: '!JB263e11'
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - jerry_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: jerry_phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: jerry_bil_jb
+      PMA_PASSWORD: '!JB263e11'
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    networks:
+      - jerry_network
+
+  app:
+    build: .
+    container_name: jerry_app
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public:/var/www/html
+    depends_on:
+      - mysql
+    networks:
+      - jerry_network
+
+volumes:
+  mysql_data:
+
+networks:
+  jerry_network:
+    driver: bridge

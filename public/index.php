@@ -1,0 +1,362 @@
+<?php
+// Database setup
+try {
+    $db = new PDO('mysql:host=mysql;dbname=jerry_bil_jb', 'jerry_bil_jb', '!JB263e11');
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
+// Create tables if not exist
+$db->exec("CREATE TABLE IF NOT EXISTS visitors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip VARCHAR(45),
+    country VARCHAR(100),
+    city VARCHAR(100),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+
+$db->exec("CREATE TABLE IF NOT EXISTS testimonials (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    text TEXT,
+    author VARCHAR(100),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+
+$db->exec("CREATE TABLE IF NOT EXISTS guestbook (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100),
+    message TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+
+// Seed testimonials if empty
+$stmt = $db->query("SELECT COUNT(*) FROM testimonials");
+if ($stmt->fetchColumn() == 0) {
+    $db->exec("INSERT INTO testimonials (text, author) VALUES 
+        ('Jerry\'s leadership at CSi Services transformed our operations. His disciplined approach delivered results.', 'Client A'),
+        ('xFit changed my fitness journey. Jerry\'s programs are practical and effective.', 'Client B'),
+        ('GrayMentality philosophy helped me find balance in life. Truly inspiring.', 'Client C')");
+}
+
+// Log visitor
+$ip = $_SERVER['REMOTE_ADDR'];
+$geo = json_decode(file_get_contents("http://ipapi.co/$ip/json/"), true);
+$country = $geo['country_name'] ?? 'Unknown';
+$city = $geo['city'] ?? 'Unknown';
+
+$stmt = $db->prepare("INSERT INTO visitors (ip, country, city) VALUES (?, ?, ?)");
+$stmt->execute([$ip, $country, $city]);
+
+// Get random testimonial
+$stmt = $db->query("SELECT text, author FROM testimonials ORDER BY RAND() LIMIT 1");
+$testimonial = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Handle guestbook submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guestbook'])) {
+    $name = htmlspecialchars($_POST['name']);
+    $message = htmlspecialchars($_POST['message']);
+    $stmt = $db->prepare("INSERT INTO guestbook (name, message) VALUES (?, ?)");
+    $stmt->execute([$name, $message]);
+}
+
+// Get guestbook entries
+$guestbook_entries = $db->query("SELECT name, message, timestamp FROM guestbook ORDER BY timestamp DESC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC);
+?>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Jerry Bilous - Owner at CSi Services, GrayMentality Founder, xFit Developer, Programmer, and Personal Trainer. Building disciplined systems since 1959." />
+    <meta name="keywords" content="Jerry Bilous, CSi Services, GrayMentality, xFit, programmer, personal trainer, philosophy" />
+    <meta property="og:title" content="Jerry Bilous | GrayMentality" />
+    <meta property="og:description" content="Discover Jerry Bilous: business leader, fitness expert, and philosopher shaping the GrayMentality approach." />
+    <meta property="og:image" content="https://jerrybilous.ca/public/assets/images/jbsgl.jpg" />
+    <meta property="og:url" content="https://jerrybilous.ca" />
+    <title>Jerry Bilous | GrayMentality</title>
+    <link rel="stylesheet" href="styles.css?v=2" />
+  </head>
+  <body>
+    <nav class="nav-bar">
+      <div class="nav-container">
+        <a href="#hero" class="nav-logo">Jerry Bilous - Hamilton, Canada</a>
+        <ul class="nav-links">
+          <li><a href="#services">Services</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#testimonials">Testimonials</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="#guestbook">Guestbook</a></li>
+        </ul>
+      </div>
+    </nav>
+    <main class="page-shell">
+      <section id="hero" class="hero-section">
+        <div class="hero-copy">
+          <p class="eyebrow">Jerry Bilous</p>
+          <h1>son, brother, father, husband, step father, grandfather, musician, golfer and friend... <small>since 1959</small></h1>
+          <p class="hero-text">
+            Owner at CSi Services · GrayMentality Founder · xFit Developer · Programmer · Personal Trainer
+          </p>
+          <div class="hero-tags">
+            <span>Owner at CSi Services</span>
+            <span class="brand-pill brand-graymentality">
+              <img src="assets/images/ChatGPTimg-GMlogo.png" alt="GrayMentality logo" />
+              GrayMentality
+            </span>
+            <span class="brand-pill brand-xfit">
+              <img src="assets/images/ChatGPTimg-xfit.png" alt="xFit logo" />
+              xFit Developer
+            </span>
+            <span><a href="mailto:mail@jerrybilous.ca">Contact Me</a></span>
+          </div>
+        </div>
+        <div class="hero-image">
+          <img src="assets/images/jbsgl.jpg" alt="Jerry Bilous portrait" />
+        </div>
+      </section>
+
+      <section id="services" class="info-section">
+        <div class="info-card">
+          <h2>What I Do</h2>
+          <p>
+            I’m a semi-retired electrical contractor, fitness thinker, and builder of practical systems that help people live stronger, longer, and more deliberately. My work combines hands-on trade experience, personal training knowledge, software development, and a lifelong interest in discipline, health, and human performance.
+
+I’m currently developing exFIT by Gray Mentality, a compliance-based strength and longevity platform designed especially for people who want structure, accountability, and sustainable progress. The idea is simple: strength is not built by hype or random effort. It is built by showing up, recording the work, recovering properly, and earning progression through consistency.
+
+Alongside my fitness work, I build web and app-based tools using PHP, MySQL, Docker, Kotlin, and Android development. My projects focus on real-world usefulness: workout tracking, automated emails, user engagement systems, calculators, onboarding flows, and secure web applications.
+
+At the core of what I do is a practical belief: systems beat motivation. Whether I’m wiring a building, designing a database, writing code, training in the gym, or working on golf swing mechanics, I’m interested in how structure, discipline, and repeated action create measurable results.
+          </p>
+        </div>
+
+        <div class="grid-panel">
+          <article>
+            <div class="card-heading">
+              <span class="card-logo-frame">
+                <img class="card-logo card-logo-csi" src="assets/images/unnamed.png" alt="CSi Services logo" width="50" height="50" />
+              </span>
+              <h3>CSi Services</h3>
+            </div>
+            <p>CSi Services provides practical, dependable solutions across residential, institutional, and commercial environments. Our work includes electrical maintenance, repair, troubleshooting, upgrades, and consulting, supported by in-house services such as drywall repair, basic plumbing, and painting.
+
+We bring hands-on electrical experience, technical problem-solving, and practical maintenance skills to every job. Whether supporting homeowners, businesses, property managers, facilities, or institutional clients, CSi Services focuses on doing the work properly, identifying issues before they become bigger problems, and helping clients make informed decisions about their buildings, systems, and operational needs.
+
+From everyday repairs to ongoing maintenance planning, project consultation, and small in-house finishing work, CSi Services is built around quality workmanship, dependable service, and trusted client relationships.</p>
+<a href="https://circuitscience.ca" target="_blank" rel="noopener noreferrer">Learn more about CSi Services</a>
+<a href="mailto:jerry@circuitscience.ca" target="_blank" rel="noopener noreferrer">Contact CSi Services</a>
+          </article>
+          <article>
+            <div class="card-heading">
+              <span class="card-logo-frame">
+                <img class="card-logo" src="assets/images/ChatGPTimg-GMlogo.png" alt="GrayMentality logo" width="50" height="50" />
+              </span>
+              <h3>GrayMentality</h3>
+            </div>
+            <p>Gray Mentality is a philosophy of living for older adults who refuse to surrender quietly to the aging process.
+
+It is built on the belief that the mind and body should continue to be challenged, stimulated, trained, and forced to adapt for as long as life allows. Aging may be inevitable, but decline should not be accepted passively. Gray Mentality rejects the idea of simply growing older, slowing down, and waiting for the end.
+
+Instead, it promotes a life of continued physical effort, mental engagement, learning, movement, discomfort, curiosity, and purpose.
+
+Gray Mentality encourages older adults to keep placing demands on themselves through strength training, new skills, problem-solving, creative work, education, social engagement, and physical challenges. The goal is not to pretend we are young forever. The goal is to remain alive in the fullest sense: capable, engaged, useful, curious, resilient, and adaptive.
+
+The offering behind Gray Mentality is built around helping older adults maintain and rebuild that adaptive capacity. Through fitness systems, learning tools, lifestyle structure, practical coaching, and ongoing challenges, Gray Mentality provides ways to keep the body working, the mind engaged, and the spirit unwilling to quit.
+
+At its core, Gray Mentality is a rebellion against passive aging.
+
+It says: do not lie in a bed waiting for death.
+
+Die Living.</p>
+<a href="https://graymentality.ca" target="_blank" rel="noopener noreferrer">Learn more about Gray Mentality</a>
+<a href="mailto:gray@graymentality.ca" target="_blank" rel="noopener noreferrer">Contact A Gray Mentality</a>
+          </article>
+          <article>
+            <div class="card-heading">
+              <span class="card-logo-frame">
+                <img class="card-logo" src="assets/images/ChatGPTimg-xfit.png" alt="xFit logo" width="50" height="50" />
+              </span>
+              <h3>xFit Development</h3>
+            </div>
+            <p>exFIT is a compliance-based strength and longevity system built around the Gray Mentality philosophy: Die Living.
+
+It is designed for older adults and everyday people who want to resist passive aging by keeping the body and mind under regular, intelligent challenge. exFIT is not about chasing youth, bodybuilding culture, or short-term transformation hype. It is about building a repeatable structure that helps people keep moving, keep adapting, and keep earning progress through consistency.
+
+exFIT uses planned resistance training, recovery, progression, reminders, education, and accountability to help users create a long-term habit of physical effort. The central idea is simple: the program does not reward intention. It rewards completion. You progress because you show up, do the work, recover, and return.
+
+What exFIT is
+
+exFIT is a structured fitness system for people who need a clear path, not random workouts.
+
+It is a program that values consistency over intensity, compliance over ego, and long-term adaptation over quick results. It helps users follow a planned sequence of workouts, track completion, monitor effort, and progress only when the work has actually been done.
+
+It is especially suited to people who want strength, function, independence, confidence, and resilience as they age.
+
+exFIT is also a mindset tool. It is designed to remind users that aging well requires participation. The body adapts when it is asked to adapt. The mind stays sharper when it is required to learn, focus, and engage. exFIT creates those regular demands in a controlled, measurable way.
+
+What exFIT is not
+
+exFIT is not a bodybuilding program.
+
+It is not a six-week beach-body challenge, a punishment routine, or a social media fitness trend. It is not built around extreme dieting, reckless intensity, or comparing yourself to younger athletes, influencers, or unrealistic ideals.
+
+It is not a system for people looking for shortcuts.
+
+exFIT does not pretend that motivation will always be there. It does not depend on hype. It is built for the days when motivation is gone and structure has to carry the user forward.
+
+It is also not medical treatment. Users with health concerns, injuries, or medical limitations should work within appropriate medical guidance before beginning or modifying exercise.
+
+Who exFIT is for
+
+exFIT is for older adults who are not ready to surrender to decline.
+
+It is for people who want to remain strong enough to live independently, move confidently, and keep participating in life. It is for those who understand that comfort, inactivity, and avoidance can quietly become a trap.
+
+exFIT is for people who appreciate structure. It is for beginners who need guidance, returning exercisers who need consistency, and experienced lifters who want a sustainable system that respects recovery and progression.
+
+It is also for people who respond well to accountability. exFIT is built for users willing to record what they did, accept what they missed, and keep going without drama or excuses.
+
+Who exFIT is not for
+
+exFIT is not for people who want entertainment more than discipline.
+
+It is not for people who want to skip the work but still receive the reward. It is not for those chasing extreme physiques, maximum lifting numbers at all costs, or constant novelty.
+
+It is not for people who want the program to flatter them. exFIT is honest by design. If the work was done, the system records it. If it was missed, the system records that too. That honesty is part of the training.
+
+exFIT may also not be appropriate for someone who needs direct medical supervision, rehabilitation, or highly individualized clinical exercise programming unless they are also working with qualified healthcare or fitness professionals.
+
+The core promise
+
+exFIT gives users a system for continuing to adapt.
+
+Not perfectly. Not dramatically. Not for applause.
+
+Consistently.
+
+It exists for people who would rather meet the aging process standing up, under load, still learning, still moving, still fighting for capacity.
+
+exFIT by Gray Mentality: Die Living.</p>
+<a href="https://xfit.graymentality.ca" target="_blank" rel="noopener noreferrer">Learn more about xFIT</a>
+<a href="mailto:infoy@xfit.graymentality.ca" target="_blank" rel="noopener noreferrer">Contact the xFIT platform</a>
+          </article>
+          <article>
+            <h3>Programming</h3>
+            <p>My programming skills are self-taught, practical, and project-driven.
+
+Over the past two years, I have learned by building real systems, not by following a traditional academic path. My progress has come from identifying problems, building solutions, breaking things, debugging them, rebuilding them better, and continuing to expand the system.
+
+I have worked primarily with PHP, MySQL, HTML, CSS, JavaScript, Docker, Git, Linux, and Android/Kotlin concepts, using them to create real tools rather than isolated practice projects. Much of my learning has come through developing exFIT by Gray Mentality, a compliance-based fitness platform with user registration, onboarding, workout generation, database automation, email queues, scheduled jobs, security checks, mobile workout logging, and administrative workflows.
+
+One of my strongest programming traits is persistence. I am not interested in simply copying code. I want to understand how the pieces fit together: how files are organized, how routing works, how sessions behave, how SQL events run, how containers communicate, and how to make systems safer, cleaner, and more maintainable.
+
+I have taught myself to think in terms of systems: how user data flows through registration and onboarding, how workouts are generated and scheduled, how completion and missed workouts are tracked, how database tables relate to one another, how automation reduces manual work, and how logging helps explain what happened.
+
+My style is incremental and relentless. I build something, test it, question it, and then return to it with better structure, clearer naming, better comments, stronger logging, and improved separation of concerns. Over time, I have moved from simply trying to make individual pages work toward larger architectural ideas such as front controllers, modular code, reusable helpers, stored procedures, Dockerized services, cron automation, and mobile app development.
+
+I am still self-taught, but I am not casual. I am building real software while learning directly inside the project. That gives my skill set a practical edge: I understand programming as a tool for solving real problems, not as an abstract classroom exercise.
+
+In two years, I have grown from beginner experimentation into a capable independent builder who can design, question, troubleshoot, and evolve a working application across the database, backend, frontend, infrastructure, and mobile layers.</p>
+          </article>
+          <article>
+            <h3>Training</h3>
+            <p>Training is where the philosophy becomes physical.
+
+My approach is built around strength, mobility, consistency, and intelligent progression. I focus on helping people build a body that works better in real life: stronger legs, better balance, more confidence, improved posture, usable endurance, and the ability to keep participating in the things they care about.
+
+The goal is not punishment, ego lifting, or chasing trends. The goal is repeatable work done well. That means clear exercises, appropriate resistance, proper recovery, honest tracking, and steady progress over time.
+
+For older adults, returning exercisers, and people who need structure, training should feel challenging but understandable. You should know what you are doing, why you are doing it, and how it fits into the larger goal of staying capable, independent, and engaged.
+
+Training is also accountability. It gives the body a reason to adapt and gives the mind a reason to stay involved. Whether the work happens in a gym, at home, or through a structured platform like exFIT, the principle is the same: show up, do the work, recover, and come back stronger.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="philosophy-section">
+        <div class="panel">
+          <h2>The Philosophy</h2>
+          <p>
+            A GrayMentality is about embracing the space between extremes. It is not about black or white thinking, but about action, balance, and continuous improvement. It pushes you to own your process, stay adaptable, and build strength from the inside out.
+          </p>
+          <p>
+            Whether in business, fitness, or personal growth, the goal is the same: clarity of purpose, consistency in practice, and courage to act.
+          </p>
+        </div>
+      </section>
+
+      <section id="projects" class="projects-section">
+        <div class="panel">
+          <h2>Projects & Case Studies</h2>
+          <div class="projects-grid">
+            <article>
+              <h3>CSi Services Expansion</h3>
+              <p>Led operational growth, improving client satisfaction by 40% through disciplined systems and quality focus.</p>
+            </article>
+            <article>
+              <h3>xFit Program Development</h3>
+              <p>Designed customized fitness systems combining strength and agility, helping clients achieve real results.</p>
+            </article>
+            <article>
+              <h3>GrayMentality Framework</h3>
+              <p>Developed a modern philosophy for personal and professional growth, emphasizing clarity and courage.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="testimonials" class="testimonials-section">
+        <div class="panel">
+          <h2>Testimonials</h2>
+          <div class="testimonials-list">
+            <?php if ($testimonial): ?>
+              <blockquote>
+                <p>"<?php echo htmlspecialchars($testimonial['text']); ?>"</p>
+                <cite>- <?php echo htmlspecialchars($testimonial['author']); ?></cite>
+              </blockquote>
+            <?php else: ?>
+              <p>No testimonials yet. Add some to the database!</p>
+            <?php endif; ?>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" class="cta-section">
+        <div class="panel cta-panel">
+          <h2>Ready to connect?</h2>
+          <p>Let’s talk about how GrayMentality, xFit development, or CSi Services can help you reach the next level.</p>
+          <div class="cta-buttons">
+            <a class="cta-button" href="mailto:mail@jerrybilous.ca">Email Jerry</a>
+            <a class="cta-button secondary" href="https://linkedin.com/in/jerrybilous" target="_blank">LinkedIn</a>
+            <a class="cta-button secondary" href="https://github.com/jerrybilous" target="_blank">GitHub</a>
+          </div>
+        </div>
+      </section>
+
+      <section id="guestbook" class="guestbook-section">
+        <div class="panel">
+          <h2>Guestbook</h2>
+          <form method="post" class="guestbook-form">
+            <input type="hidden" name="guestbook" value="1">
+            <input type="text" name="name" placeholder="Your Name" required>
+            <textarea name="message" placeholder="Your Message" required></textarea>
+            <button type="submit" class="cta-button">Submit</button>
+          </form>
+          <div class="guestbook-entries">
+            <?php foreach ($guestbook_entries as $entry): ?>
+              <div class="entry">
+                <strong><?php echo htmlspecialchars($entry['name']); ?>:</strong>
+                <p><?php echo htmlspecialchars($entry['message']); ?></p>
+                <small><?php echo $entry['timestamp']; ?></small>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <p>jerrybilous.ca · mail@jerrybilous.ca</p>
+      </footer>
+    </main>
+  </body>
+</html>
