@@ -52,9 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $meta[$image]['likes']++;
         } elseif ($action === 'dislike') {
             $meta[$image]['dislikes']++;
-        } elseif ($action === 'caption') {
-            $caption = trim((string) ($_POST['caption'] ?? ''));
-            $meta[$image]['caption'] = $caption !== '' ? substr($caption, 0, 140) : gallery_default_caption($image);
         }
 
         if (is_dir($gallery_dir)) {
@@ -86,7 +83,7 @@ $photo_count = count($images);
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Jerry Bilous family photo gallery." />
     <title>My Clan as of 2026 | Jerry Bilous</title>
-    <link rel="stylesheet" href="styles.css?v=6" />
+    <link rel="stylesheet" href="styles.css?v=23" />
   </head>
   <body>
     <nav class="nav-bar">
@@ -161,13 +158,6 @@ $photo_count = count($images);
                     <button type="submit">Dislike</button>
                   </form>
                 </div>
-                <form class="gallery-caption-form" method="post">
-                  <input id="gallery-caption-image" type="hidden" name="image" value="<?php echo htmlspecialchars($first_image, ENT_QUOTES, 'UTF-8'); ?>">
-                  <input type="hidden" name="gallery_action" value="caption">
-                  <label for="gallery-caption-input">Caption</label>
-                  <input id="gallery-caption-input" type="text" name="caption" value="<?php echo htmlspecialchars($first_caption, ENT_QUOTES, 'UTF-8'); ?>" maxlength="140">
-                  <button type="submit">Save Caption</button>
-                </form>
                 <div class="gallery-nav-buttons">
                   <button id="gallery-prev" type="button">Previous</button>
                   <button id="gallery-next" type="button">Next</button>
@@ -189,12 +179,10 @@ $photo_count = count($images);
       const galleryPreviewImage = document.getElementById('gallery-preview-image');
       const galleryPreviewBg = document.getElementById('gallery-preview-bg');
       const galleryPreviewCaption = document.getElementById('gallery-preview-caption');
-      const galleryCaptionInput = document.getElementById('gallery-caption-input');
       const galleryLikeCount = document.getElementById('gallery-like-count');
       const galleryDislikeCount = document.getElementById('gallery-dislike-count');
       const galleryLikeImage = document.getElementById('gallery-like-image');
       const galleryDislikeImage = document.getElementById('gallery-dislike-image');
-      const galleryCaptionImage = document.getElementById('gallery-caption-image');
       const galleryPrev = document.getElementById('gallery-prev');
       const galleryNext = document.getElementById('gallery-next');
       let activeGalleryIndex = 0;
@@ -212,12 +200,10 @@ $photo_count = count($images);
         galleryPreviewImage.alt = button.dataset.galleryCaption;
         galleryPreviewBg.style.backgroundImage = `url('${button.dataset.gallerySrc}')`;
         galleryPreviewCaption.textContent = button.dataset.galleryCaption;
-        galleryCaptionInput.value = button.dataset.galleryCaption;
         galleryLikeCount.textContent = button.dataset.galleryLikes;
         galleryDislikeCount.textContent = button.dataset.galleryDislikes;
         galleryLikeImage.value = button.dataset.galleryImage;
         galleryDislikeImage.value = button.dataset.galleryImage;
-        galleryCaptionImage.value = button.dataset.galleryImage;
       }
 
       galleryButtons.forEach((button, index) => {

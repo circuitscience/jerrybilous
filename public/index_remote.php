@@ -3,6 +3,7 @@ $db = null;
 $testimonial = null;
 $guestbook_entries = [];
 $guestbook_error = null;
+$recent_visitors = [];
 $subscribe_message = isset($_GET['subscribed']) ? 'You are subscribed. I will use this list for page content, photo, and news updates.' : null;
 $subscribe_error = null;
 
@@ -104,6 +105,10 @@ try {
     $guestbook_entries = $db
         ->query("SELECT name, message, timestamp FROM guestbook ORDER BY timestamp DESC LIMIT 10")
         ->fetchAll();
+
+    $recent_visitors = $db
+        ->query("SELECT city, country, MAX(timestamp) AS timestamp FROM visitors GROUP BY city, country ORDER BY timestamp DESC LIMIT 5")
+        ->fetchAll();
 } catch (PDOException $e) {
     error_log('Remote database error: ' . $e->getMessage());
 }
@@ -116,20 +121,41 @@ $days_lived = $birth_date->diff($today)->days;
 $target_days = $birth_date->diff($minimum_target_date)->days;
 $days_remaining = max(0, $today->diff($minimum_target_date)->invert ? 0 : $today->diff($minimum_target_date)->days);
 $target_date_iso = $minimum_target_date->format('Y-m-d') . 'T00:00:00-04:00';
+$latest_notes_file = __DIR__ . '/assets/latest_notes.json';
+$latest_notes = [];
+if (is_file($latest_notes_file)) {
+    $decoded_notes = json_decode((string) file_get_contents($latest_notes_file), true);
+    if (is_array($decoded_notes)) {
+        $latest_notes = array_slice($decoded_notes, 0, 3);
+    }
+}
+$forsale_items_file = __DIR__ . '/assets/forsale_items.json';
+$has_forsale_items = false;
+if (is_file($forsale_items_file)) {
+    $forsale_items = json_decode((string) file_get_contents($forsale_items_file), true);
+    if (is_array($forsale_items)) {
+        foreach ($forsale_items as $item) {
+            if (is_array($item) && !empty($item['available']) && empty($item['sample'])) {
+                $has_forsale_items = true;
+                break;
+            }
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Jerry Bilous - Owner at CSi Services, GrayMentality Founder, xFit Developer, Programmer, and Personal Trainer. Building disciplined systems since 1959." />
-    <meta name="keywords" content="Jerry Bilous, CSi Services, GrayMentality, xFit, programmer, personal trainer, philosophy" />
+    <meta name="description" content="Jerry Bilous of Hamilton, Canada: Gray Mentality, exFIT, CSi Services, family gallery, golf, training, personal projects, and practical software systems." />
+    <meta name="keywords" content="Jerry Bilous, Gray Mentality, exFIT, CSi Services, Hamilton, family gallery, golf, training, software, longevity" />
     <meta property="og:title" content="Jerry Bilous | GrayMentality" />
     <meta property="og:description" content="Discover Jerry Bilous: business leader, fitness expert, and philosopher shaping the GrayMentality approach." />
     <meta property="og:image" content="https://jerrybilous.ca/public/assets/images/jbsgl.jpg" />
     <meta property="og:url" content="https://jerrybilous.ca" />
     <title>Jerry Bilous | GrayMentality</title>
-    <link rel="stylesheet" href="styles.css?v=9" />
+    <link rel="stylesheet" href="styles.css?v=23" />
   </head>
   <body>
     <nav class="nav-bar">
@@ -140,7 +166,9 @@ $target_date_iso = $minimum_target_date->format('Y-m-d') . 'T00:00:00-04:00';
           <li><a href="#projects">Projects</a></li>
           <li><a href="#testimonials">Testimonials</a></li>
           <li><a href="#contact">Contact</a></li>
+          <?php if ($has_forsale_items): ?><li><a href="forsale.php">For Sale</a></li><?php endif; ?>
           <li><a href="#subscribe">Subscribe</a></li>
+          <li><a href="admin.php">Admin</a></li>
           <li><a href="#guestbook">Guestbook</a></li>
         </ul>
       </div>
@@ -148,11 +176,17 @@ $target_date_iso = $minimum_target_date->format('Y-m-d') . 'T00:00:00-04:00';
     <main class="page-shell">
       <section id="hero" class="hero-section">
         <div class="hero-copy">
-          <p class="eyebrow">Jerry Bilous</p>
-          <h1>son, brother, father, husband, step father, grandfather, musician, golfer and friend... <small>since 1959</small></h1>
-          <p class="hero-text">
-            Owner at CSi Services · GrayMentality Founder · xFit Developer · Programmer · Personal Trainer
-          </p>
+          <div class="hero-blurb">
+            <video class="hero-flag-video" autoplay muted loop playsinline aria-hidden="true">
+              <source src="assets/videos/canadian-flag.mp4" type="video/mp4">
+            </video>
+            <div class="hero-flag-fallback" aria-hidden="true"></div>
+            <p class="eyebrow">Jerry Bilous</p>
+            <h1>son, brother, father, husband, step father, grandfather, musician, golfer and friend... <small>since 1959</small></h1>
+            <p class="hero-text">
+              Building practical systems for work, training, family, golf, and living deliberately.
+            </p>
+          </div>
           <div class="life-counter">
             <div>
               <strong><?php echo number_format($days_lived); ?></strong>
@@ -177,7 +211,6 @@ $target_date_iso = $minimum_target_date->format('Y-m-d') . 'T00:00:00-04:00';
             </strong>
           </div>
           <div class="hero-tags">
-            <span>Owner at CSi Services</span>
             <span class="brand-pill brand-graymentality">
               <img src="assets/images/ChatGPTimg-GMlogo.png" alt="GrayMentality logo" />
               GrayMentality
@@ -186,13 +219,37 @@ $target_date_iso = $minimum_target_date->format('Y-m-d') . 'T00:00:00-04:00';
               <img src="assets/images/ChatGPTimg-xfit.png" alt="xFit logo" />
               xFit Developer
             </span>
-            <span><a href="mailto:mail@jerrybilous.ca">Contact Me</a></span>
-            <span><a href="gallery.php">Gallery</a></span>
-            <span><a href="#subscribe">Subscribe</a></span>
+            <span>CSi Services</span>
+            <span><a href="gallery.php">My Photo Gallery</a></span>
+            <?php if ($has_forsale_items): ?><span><a href="forsale.php">For Sale</a></span><?php endif; ?>
+            <span><a href="#subscribe">Subscribe for updates</a></span>
+          </div>
+          <div id="contact" class="hero-contact-panel">
+            <h2>Ready to connect?</h2>
+            <p>Let’s talk about how GrayMentality, xFit development, or CSi Services can help you reach the next level.</p>
+            <div class="hero-contact-links">
+              <a href="mailto:mail@jerrybilous.ca">Email Jerry</a>
+              <a href="gallery.php">My Photo Gallery</a>
+              <?php if ($has_forsale_items): ?><a href="forsale.php">For Sale</a><?php endif; ?>
+              <a href="#subscribe">Subscribe for updates</a>
+              <a href="https://linkedin.com/in/jerrybilous" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              <a href="https://github.com/circuitscience/jerrybilous" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </div>
           </div>
         </div>
         <div class="hero-image">
           <img src="assets/images/jbsgl.jpg" alt="Jerry Bilous portrait" />
+          <div class="recent-visitors-panel hero-visitors-panel">
+            <h2>Recent Visitors</h2>
+            <ul class="recent-visitors-list">
+              <?php foreach ($recent_visitors as $visitor): ?>
+                <li>
+                  <span><?php echo htmlspecialchars($visitor['city'] ?: 'Unknown', ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars($visitor['country'] ?: 'Unknown', ENT_QUOTES, 'UTF-8'); ?></span>
+                  <small><?php echo htmlspecialchars($visitor['timestamp'], ENT_QUOTES, 'UTF-8'); ?></small>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+          </div>
         </div>
       </section>
 
@@ -365,6 +422,21 @@ Training is also accountability. It gives the body a reason to adapt and gives t
         </div>
       </section>
 
+      <section class="latest-notes-section">
+        <div class="panel latest-notes-panel">
+          <h2>Latest Notes</h2>
+          <div class="latest-notes-list">
+            <?php foreach ($latest_notes as $note): ?>
+              <article>
+                <span><?php echo htmlspecialchars(($note['date'] ?? '') . ' · ' . ($note['type'] ?? 'update'), ENT_QUOTES, 'UTF-8'); ?></span>
+                <h3><?php echo htmlspecialchars($note['title'] ?? 'Update', ENT_QUOTES, 'UTF-8'); ?></h3>
+                <p><?php echo htmlspecialchars($note['body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+              </article>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      </section>
+
       <section id="projects" class="projects-section">
         <div class="panel">
           <h2>Projects & Case Studies</h2>
@@ -401,69 +473,59 @@ Training is also accountability. It gives the body a reason to adapt and gives t
         </div>
       </section>
 
-      <section id="contact" class="cta-section">
-        <div class="panel cta-panel">
-          <h2>Ready to connect?</h2>
-          <p>Let’s talk about how GrayMentality, xFit development, or CSi Services can help you reach the next level.</p>
-          <div class="cta-buttons">
-            <a class="cta-button" href="mailto:mail@jerrybilous.ca">Email Jerry</a>
-            <a class="cta-button secondary" href="https://linkedin.com/in/jerrybilous" target="_blank">LinkedIn</a>
-            <a class="cta-button secondary" href="https://github.com/circuitscience/jerrybilous" target="_blank">GitHub</a>
-          </div>
-        </div>
-      </section>
-
-      <section id="subscribe" class="subscribe-section">
-        <div class="panel subscribe-panel">
-          <div>
-            <h2>Subscribe for Updates</h2>
-            <p>Get notified when I add new page content, family photos, or news.</p>
-          </div>
-          <?php if ($subscribe_message): ?>
-            <p class="form-message success"><?php echo htmlspecialchars($subscribe_message, ENT_QUOTES, 'UTF-8'); ?></p>
-          <?php endif; ?>
-          <?php if ($subscribe_error): ?>
-            <p class="form-message error"><?php echo htmlspecialchars($subscribe_error, ENT_QUOTES, 'UTF-8'); ?></p>
-          <?php endif; ?>
-          <form method="post" class="subscribe-form">
-            <input type="hidden" name="subscribe" value="1">
-            <div class="subscribe-fields">
-              <input type="text" name="subscriber_name" placeholder="Your Name">
-              <input type="email" name="subscriber_email" placeholder="Your Email" required>
+      <div class="form-row">
+        <section id="subscribe" class="subscribe-section">
+          <div class="panel subscribe-panel">
+            <div>
+              <h2>Subscribe for Updates</h2>
+              <p>Get notified when I add new page content, family photos, or news.</p>
             </div>
-            <div class="subscribe-topics" aria-label="Update types">
-              <label><input type="checkbox" name="topics[]" value="page_content" checked> Page content</label>
-              <label><input type="checkbox" name="topics[]" value="photos" checked> Photos</label>
-              <label><input type="checkbox" name="topics[]" value="news" checked> News</label>
-            </div>
-            <button type="submit" class="cta-button">Subscribe</button>
-          </form>
-        </div>
-      </section>
-
-      <section id="guestbook" class="guestbook-section">
-        <div class="panel">
-          <h2>Guestbook</h2>
-          <form method="post" class="guestbook-form">
-            <input type="hidden" name="guestbook" value="1">
-            <input type="text" name="name" placeholder="Your Name" required>
-            <textarea name="message" placeholder="Your Message" required></textarea>
-            <button type="submit" class="cta-button">Submit</button>
-          </form>
-          <?php if ($guestbook_error): ?>
-            <p><?php echo htmlspecialchars($guestbook_error, ENT_QUOTES, 'UTF-8'); ?></p>
-          <?php endif; ?>
-          <div class="guestbook-entries">
-            <?php foreach ($guestbook_entries as $entry): ?>
-              <div class="entry">
-                <strong><?php echo htmlspecialchars($entry['name'], ENT_QUOTES, 'UTF-8'); ?>:</strong>
-                <p><?php echo htmlspecialchars($entry['message'], ENT_QUOTES, 'UTF-8'); ?></p>
-                <small><?php echo htmlspecialchars($entry['timestamp'], ENT_QUOTES, 'UTF-8'); ?></small>
+            <?php if ($subscribe_message): ?>
+              <p class="form-message success"><?php echo htmlspecialchars($subscribe_message, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php endif; ?>
+            <?php if ($subscribe_error): ?>
+              <p class="form-message error"><?php echo htmlspecialchars($subscribe_error, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php endif; ?>
+            <form method="post" class="subscribe-form">
+              <input type="hidden" name="subscribe" value="1">
+              <div class="subscribe-fields">
+                <input type="text" name="subscriber_name" placeholder="Your Name">
+                <input type="email" name="subscriber_email" placeholder="Your Email" required>
               </div>
-            <?php endforeach; ?>
+              <div class="subscribe-topics" aria-label="Update types">
+                <label><input type="checkbox" name="topics[]" value="page_content" checked> Page content</label>
+                <label><input type="checkbox" name="topics[]" value="photos" checked> Photos</label>
+                <label><input type="checkbox" name="topics[]" value="news" checked> News</label>
+              </div>
+              <button type="submit" class="cta-button">Subscribe</button>
+            </form>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section id="guestbook" class="guestbook-section">
+          <div class="panel">
+            <h2>Guestbook</h2>
+            <form method="post" class="guestbook-form">
+              <input type="hidden" name="guestbook" value="1">
+              <input type="text" name="name" placeholder="Your Name" required>
+              <textarea name="message" placeholder="Your Message" required></textarea>
+              <button type="submit" class="cta-button">Submit</button>
+            </form>
+            <?php if ($guestbook_error): ?>
+              <p><?php echo htmlspecialchars($guestbook_error, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php endif; ?>
+            <div class="guestbook-entries">
+              <?php foreach ($guestbook_entries as $entry): ?>
+                <div class="entry">
+                  <strong><?php echo htmlspecialchars($entry['name'], ENT_QUOTES, 'UTF-8'); ?>:</strong>
+                  <p><?php echo htmlspecialchars($entry['message'], ENT_QUOTES, 'UTF-8'); ?></p>
+                  <small><?php echo htmlspecialchars($entry['timestamp'], ENT_QUOTES, 'UTF-8'); ?></small>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <footer class="page-footer">
         <p>jerrybilous.ca · mail@jerrybilous.ca</p>
@@ -495,6 +557,28 @@ Training is also accountability. It gives the body a reason to adapt and gives t
         updateLifeCountdown();
         setInterval(updateLifeCountdown, 1000);
       }
+
+      document.querySelectorAll('.grid-panel article').forEach((card) => {
+        const copy = card.querySelector('p');
+        if (!copy || copy.scrollHeight <= copy.clientHeight + 8) {
+          return;
+        }
+
+        card.classList.add('is-collapsible');
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'service-card-toggle';
+        toggle.textContent = 'Read more';
+        toggle.setAttribute('aria-expanded', 'false');
+
+        toggle.addEventListener('click', () => {
+          const expanded = card.classList.toggle('is-expanded');
+          toggle.textContent = expanded ? 'Show less' : 'Read more';
+          toggle.setAttribute('aria-expanded', String(expanded));
+        });
+
+        copy.insertAdjacentElement('afterend', toggle);
+      });
     </script>
   </body>
 </html>

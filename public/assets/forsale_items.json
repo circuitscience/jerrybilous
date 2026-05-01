@@ -1,0 +1,12 @@
+[
+  {
+    "id": "sample-golf-clubs",
+    "title": "Sample Listing - Golf Clubs",
+    "description": "Replace this sample item with one of your private items for sale.",
+    "price": 125.00,
+    "currency": "CAD",
+    "image": "assets/images/forsale/sample-item.jpg",
+    "available": false,
+    "sample": true
+  }
+]
