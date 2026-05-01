@@ -1,108 +1,112 @@
 <?php
-           // Database setup
-            try {
-              $db = new PDO('mysql:host=mysql;dbname=jerry_bil_jb', 'jerry_bil_jb', '!JB263e11');
-              $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            } catch (PDOException $e) {
-              die("Database connection failed: " . $e->getMessage());
-            }
-
-            // Create tables if not exist
-            $db->exec("CREATE TABLE IF NOT EXISTS visitors (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ip VARCHAR(45),
-    country VARCHAR(100),
-    city VARCHAR(100),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)");
-
-            $db->exec("CREATE TABLE IF NOT EXISTS testimonials (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    text TEXT,
-    author VARCHAR(100),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)");
-
-            $db->exec("CREATE TABLE IF NOT EXISTS guestbook (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100),
-    message TEXT,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)");
-
-            $db->exec("CREATE TABLE IF NOT EXISTS subscribers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(190) NOT NULL UNIQUE,
-    name VARCHAR(100),
-    topics VARCHAR(255) NOT NULL DEFAULT 'page_content,photos,news',
-    status ENUM('active','unsubscribed') NOT NULL DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-)");
-
-            // Seed testimonials if empty
-            $stmt = $db->query("SELECT COUNT(*) FROM testimonials");
-            if ($stmt->fetchColumn() == 0) {
-              $db->exec("INSERT INTO testimonials (text, author) VALUES 
-        ('Jerry\'s leadership at CSi Services transformed our operations. His disciplined approach delivered results.', 'Client A'),
-        ('xFit changed my fitness journey. Jerry\'s programs are practical and effective.', 'Client B'),
-        ('GrayMentality philosophy helped me find balance in life. Truly inspiring.', 'Client C')");
-            }
-
-// Log visitor
-$ip = $_SERVER['REMOTE_ADDR'];
-$geo = json_decode(file_get_contents("http://ipapi.co/$ip/json/"), true);
-$country = $geo['country_name'] ?? 'Unknown';
-$city = $geo['city'] ?? 'Unknown';
-
-$stmt = $db->prepare("INSERT INTO visitors (ip, country, city) VALUES (?, ?, ?)");
-$stmt->execute([$ip, $country, $city]);
-
-// Get random testimonial
-$stmt = $db->query("SELECT text, author FROM testimonials ORDER BY RAND() LIMIT 1");
-$testimonial = $stmt->fetch(PDO::FETCH_ASSOC);
-
+$db = null;
+$testimonial = null;
+$guestbook_entries = [];
+$guestbook_error = null;
 $subscribe_message = isset($_GET['subscribed']) ? 'You are subscribed. I will use this list for page content, photo, and news updates.' : null;
 $subscribe_error = null;
 
-// Handle guestbook submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guestbook'])) {
-    $name = htmlspecialchars($_POST['name']);
-    $message = htmlspecialchars($_POST['message']);
-    $stmt = $db->prepare("INSERT INTO guestbook (name, message) VALUES (?, ?)");
-    $stmt->execute([$name, $message]);
-}
+try {
+    $db_host = 'localhost';
+    $db_name = 'jerrybil_jb';
+    $db_user = 'jerrybil_jb';
+    $db_pass = '!JB263e11';
 
-// Handle subscription submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe'])) {
-    $subscriber_name = trim($_POST['subscriber_name'] ?? '');
-    $subscriber_email = filter_var(trim($_POST['subscriber_email'] ?? ''), FILTER_VALIDATE_EMAIL);
-    $allowed_topics = ['page_content', 'photos', 'news'];
-    $selected_topics = array_values(array_intersect((array) ($_POST['topics'] ?? []), $allowed_topics));
+    $db = new PDO(
+        "mysql:host={$db_host};dbname={$db_name};charset=utf8mb4",
+        $db_user,
+        $db_pass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]
+    );
 
-    if (!$subscriber_email) {
-        $subscribe_error = 'Please enter a valid email address.';
-    } elseif (!$selected_topics) {
-        $subscribe_error = 'Choose at least one update type.';
-    } else {
-        $topics = implode(',', $selected_topics);
-        $stmt = $db->prepare("
-            INSERT INTO subscribers (email, name, topics, status)
-            VALUES (?, ?, ?, 'active')
-            ON DUPLICATE KEY UPDATE
-                name = VALUES(name),
-                topics = VALUES(topics),
-                status = 'active'
-        ");
-        $stmt->execute([$subscriber_email, $subscriber_name, $topics]);
+    $db->exec("CREATE TABLE IF NOT EXISTS subscribers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(190) NOT NULL UNIQUE,
+        name VARCHAR(100),
+        topics VARCHAR(255) NOT NULL DEFAULT 'page_content,photos,news',
+        status ENUM('active','unsubscribed') NOT NULL DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )");
 
-        header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?subscribed=1#subscribe');
-        exit;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guestbook'])) {
+        $name = trim($_POST['name'] ?? '');
+        $message = trim($_POST['message'] ?? '');
+
+        if ($name !== '' && $message !== '') {
+            $stmt = $db->prepare("INSERT INTO guestbook (name, message) VALUES (?, ?)");
+            $stmt->execute([$name, $message]);
+
+            header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '#guestbook');
+            exit;
+        }
+
+        $guestbook_error = 'Please enter your name and message.';
     }
-}
 
-// Get guestbook entries
-$guestbook_entries = $db->query("SELECT name, message, timestamp FROM guestbook ORDER BY timestamp DESC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe'])) {
+        $subscriber_name = trim($_POST['subscriber_name'] ?? '');
+        $subscriber_email = filter_var(trim($_POST['subscriber_email'] ?? ''), FILTER_VALIDATE_EMAIL);
+        $allowed_topics = ['page_content', 'photos', 'news'];
+        $selected_topics = array_values(array_intersect((array) ($_POST['topics'] ?? []), $allowed_topics));
+
+        if (!$subscriber_email) {
+            $subscribe_error = 'Please enter a valid email address.';
+        } elseif (!$selected_topics) {
+            $subscribe_error = 'Choose at least one update type.';
+        } else {
+            $topics = implode(',', $selected_topics);
+            $stmt = $db->prepare("
+                INSERT INTO subscribers (email, name, topics, status)
+                VALUES (?, ?, ?, 'active')
+                ON DUPLICATE KEY UPDATE
+                    name = VALUES(name),
+                    topics = VALUES(topics),
+                    status = 'active'
+            ");
+            $stmt->execute([$subscriber_email, $subscriber_name, $topics]);
+
+            header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?') . '?subscribed=1#subscribe');
+            exit;
+        }
+    }
+
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+    $country = 'Unknown';
+    $city = 'Unknown';
+
+    $geo_context = stream_context_create([
+        'http' => [
+            'timeout' => 2,
+            'user_agent' => 'jerrybilous.ca visitor logger',
+        ],
+    ]);
+    $geo_response = @file_get_contents("https://ipapi.co/{$ip}/json/", false, $geo_context);
+
+    if ($geo_response !== false) {
+        $geo = json_decode($geo_response, true);
+        if (is_array($geo)) {
+            $country = $geo['country_name'] ?? 'Unknown';
+            $city = $geo['city'] ?? 'Unknown';
+        }
+    }
+
+    $stmt = $db->prepare("INSERT INTO visitors (ip, country, city) VALUES (?, ?, ?)");
+    $stmt->execute([$ip, $country, $city]);
+
+    $stmt = $db->query("SELECT text, author FROM testimonials ORDER BY RAND() LIMIT 1");
+    $testimonial = $stmt->fetch();
+
+    $guestbook_entries = $db
+        ->query("SELECT name, message, timestamp FROM guestbook ORDER BY timestamp DESC LIMIT 10")
+        ->fetchAll();
+} catch (PDOException $e) {
+    error_log('Remote database error: ' . $e->getMessage());
+}
 
 $life_timezone = new DateTimeZone('America/Toronto');
 $birth_date = new DateTimeImmutable('1959-07-03', $life_timezone);
@@ -387,11 +391,11 @@ Training is also accountability. It gives the body a reason to adapt and gives t
           <div class="testimonials-list">
             <?php if ($testimonial): ?>
               <blockquote>
-                <p>"<?php echo htmlspecialchars($testimonial['text']); ?>"</p>
-                <cite>- <?php echo htmlspecialchars($testimonial['author']); ?></cite>
+                <p>"<?php echo htmlspecialchars($testimonial['text'], ENT_QUOTES, 'UTF-8'); ?>"</p>
+                <cite>- <?php echo htmlspecialchars($testimonial['author'], ENT_QUOTES, 'UTF-8'); ?></cite>
               </blockquote>
             <?php else: ?>
-              <p>No testimonials yet. Add some to the database!</p>
+              <p>No testimonials are available right now.</p>
             <?php endif; ?>
           </div>
         </div>
@@ -416,10 +420,10 @@ Training is also accountability. It gives the body a reason to adapt and gives t
             <p>Get notified when I add new page content, family photos, or news.</p>
           </div>
           <?php if ($subscribe_message): ?>
-            <p class="form-message success"><?php echo htmlspecialchars($subscribe_message); ?></p>
+            <p class="form-message success"><?php echo htmlspecialchars($subscribe_message, ENT_QUOTES, 'UTF-8'); ?></p>
           <?php endif; ?>
           <?php if ($subscribe_error): ?>
-            <p class="form-message error"><?php echo htmlspecialchars($subscribe_error); ?></p>
+            <p class="form-message error"><?php echo htmlspecialchars($subscribe_error, ENT_QUOTES, 'UTF-8'); ?></p>
           <?php endif; ?>
           <form method="post" class="subscribe-form">
             <input type="hidden" name="subscribe" value="1">
@@ -446,12 +450,15 @@ Training is also accountability. It gives the body a reason to adapt and gives t
             <textarea name="message" placeholder="Your Message" required></textarea>
             <button type="submit" class="cta-button">Submit</button>
           </form>
+          <?php if ($guestbook_error): ?>
+            <p><?php echo htmlspecialchars($guestbook_error, ENT_QUOTES, 'UTF-8'); ?></p>
+          <?php endif; ?>
           <div class="guestbook-entries">
             <?php foreach ($guestbook_entries as $entry): ?>
               <div class="entry">
-                <strong><?php echo htmlspecialchars($entry['name']); ?>:</strong>
-                <p><?php echo htmlspecialchars($entry['message']); ?></p>
-                <small><?php echo $entry['timestamp']; ?></small>
+                <strong><?php echo htmlspecialchars($entry['name'], ENT_QUOTES, 'UTF-8'); ?>:</strong>
+                <p><?php echo htmlspecialchars($entry['message'], ENT_QUOTES, 'UTF-8'); ?></p>
+                <small><?php echo htmlspecialchars($entry['timestamp'], ENT_QUOTES, 'UTF-8'); ?></small>
               </div>
             <?php endforeach; ?>
           </div>
