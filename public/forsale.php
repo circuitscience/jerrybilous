@@ -21,7 +21,7 @@ $currency = $items[0]['currency'] ?? 'CAD';
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Private items for sale from Jerry Bilous." />
     <title>For Sale | Jerry Bilous</title>
-    <link rel="stylesheet" href="styles.css?v=23" />
+    <link rel="stylesheet" href="styles.css?v=24" />
     <?php if ($paypal_client_id !== 'YOUR_PAYPAL_CLIENT_ID'): ?>
       <script src="https://www.paypal.com/sdk/js?client-id=<?php echo urlencode($paypal_client_id); ?>&currency=<?php echo urlencode($currency); ?>&components=buttons"></script>
     <?php endif; ?>

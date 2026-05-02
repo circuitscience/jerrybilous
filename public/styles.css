@@ -737,6 +737,39 @@ body {
 }
 
 @media (max-width: 900px) {
+  .nav-container {
+    height: auto;
+    min-height: 74px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nav-logo {
+    max-width: 100%;
+    font-size: 0.98rem;
+    line-height: 1.2;
+  }
+
+  .nav-links {
+    width: 100%;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+
+  .nav-links a {
+    white-space: nowrap;
+    font-size: 0.9rem;
+  }
+
+  .page-shell {
+    padding-top: 128px;
+  }
+
   .hero-section {
     grid-template-columns: 1fr;
   }
@@ -779,7 +812,7 @@ body {
 @media (max-width: 640px) {
   .page-shell {
     width: min(100%, calc(100% - 24px));
-    padding: 24px 0 48px;
+    padding: 128px 0 48px;
   }
 
   .hero-section {

@@ -144,12 +144,12 @@ if (is_file($forsale_items_file)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Jerry Bilous of Hamilton, Canada: Gray Mentality, exFIT, CSi Services, family gallery, golf, training, personal projects, and practical software systems." />
     <meta name="keywords" content="Jerry Bilous, Gray Mentality, exFIT, CSi Services, Hamilton, family gallery, golf, training, software, longevity" />
-    <meta property="og:title" content="Jerry Bilous | GrayMentality" />
-    <meta property="og:description" content="Discover Jerry Bilous: business leader, fitness expert, and philosopher shaping the GrayMentality approach." />
+    <meta property="og:title" content="Just Jerry Bilous" />
+    <meta property="og:description" content="The personal site of Jerry Bilous: family, training, golf, practical projects, and notes from Hamilton, Canada." />
     <meta property="og:image" content="https://jerrybilous.ca/public/assets/images/jbsgl.jpg" />
     <meta property="og:url" content="https://jerrybilous.ca" />
-    <title>Jerry Bilous | GrayMentality</title>
-    <link rel="stylesheet" href="styles.css?v=23" />
+    <title>Just Jerry Bilous</title>
+    <link rel="stylesheet" href="styles.css?v=24" />
   </head>
   <body>
     <nav class="nav-bar">
