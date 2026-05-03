@@ -1,6 +1,5 @@
 <?php
 $db = null;
-$testimonial = null;
 $guestbook_entries = [];
 $guestbook_error = null;
 $recent_visitors = [];
@@ -99,15 +98,12 @@ try {
     $stmt = $db->prepare("INSERT INTO visitors (ip, country, city) VALUES (?, ?, ?)");
     $stmt->execute([$ip, $country, $city]);
 
-    $stmt = $db->query("SELECT text, author FROM testimonials ORDER BY RAND() LIMIT 1");
-    $testimonial = $stmt->fetch();
-
     $guestbook_entries = $db
         ->query("SELECT name, message, timestamp FROM guestbook ORDER BY timestamp DESC LIMIT 10")
         ->fetchAll();
 
     $recent_visitors = $db
-        ->query("SELECT city, country, MAX(timestamp) AS timestamp FROM visitors GROUP BY city, country ORDER BY timestamp DESC LIMIT 5")
+        ->query("SELECT city, country, MAX(timestamp) AS timestamp FROM visitors WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY city, country ORDER BY timestamp DESC")
         ->fetchAll();
 } catch (PDOException $e) {
     error_log('Remote database error: ' . $e->getMessage());
@@ -155,7 +151,7 @@ if (is_file($forsale_items_file)) {
     <meta property="og:image" content="https://jerrybilous.ca/public/assets/images/jbsgl.jpg" />
     <meta property="og:url" content="https://jerrybilous.ca" />
     <title>Just Jerry Bilous</title>
-    <link rel="stylesheet" href="styles.css?v=24" />
+    <link rel="stylesheet" href="styles.css?v=27" />
   </head>
   <body>
     <nav class="nav-bar">
@@ -164,8 +160,8 @@ if (is_file($forsale_items_file)) {
         <ul class="nav-links">
           <li><a href="#services">Services</a></li>
           <li><a href="#projects">Projects</a></li>
-          <li><a href="#testimonials">Testimonials</a></li>
           <li><a href="#contact">Contact</a></li>
+          <li><a href="music.php">Music</a></li>
           <?php if ($has_forsale_items): ?><li><a href="forsale.php">For Sale</a></li><?php endif; ?>
           <li><a href="#subscribe">Subscribe</a></li>
           <li><a href="admin.php">Admin</a></li>
@@ -220,19 +216,25 @@ if (is_file($forsale_items_file)) {
               xFit Developer
             </span>
             <span>CSi Services</span>
+            <span><a href="music.php">My Music</a></span>
             <span><a href="gallery.php">My Photo Gallery</a></span>
             <?php if ($has_forsale_items): ?><span><a href="forsale.php">For Sale</a></span><?php endif; ?>
             <span><a href="#subscribe">Subscribe for updates</a></span>
           </div>
           <div id="contact" class="hero-contact-panel">
             <h2>Ready to connect?</h2>
-            <p>Let’s talk about how GrayMentality, xFit development, or CSi Services can help you reach the next level.</p>
+            <p>Let’s talk!</p>
             <div class="hero-contact-links">
               <a href="mailto:mail@jerrybilous.ca">Email Jerry</a>
+              <a href="music.php">My Music</a>
+              <a href="music.php#listening-lately">What I'm Listening To Lately</a>
               <a href="gallery.php">My Photo Gallery</a>
               <?php if ($has_forsale_items): ?><a href="forsale.php">For Sale</a><?php endif; ?>
               <a href="#subscribe">Subscribe for updates</a>
-              <a href="https://linkedin.com/in/jerrybilous" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              <a href="https://www.facebook.com/jerry.bilous.3" target="_blank" rel="noopener noreferrer">Facebook</a>
+              <a href="https://www.linkedin.com/in/jerry-bilous-me-9120b533
+
+" target="_blank" rel="noopener noreferrer">LinkedIn</a>
               <a href="https://github.com/circuitscience/jerrybilous" target="_blank" rel="noopener noreferrer">GitHub</a>
             </div>
           </div>
@@ -240,7 +242,7 @@ if (is_file($forsale_items_file)) {
         <div class="hero-image">
           <img src="assets/images/jbsgl.jpg" alt="Jerry Bilous portrait" />
           <div class="recent-visitors-panel hero-visitors-panel">
-            <h2>Recent Visitors</h2>
+            <h2>Unique visitors - last 30 days</h2>
             <ul class="recent-visitors-list">
               <?php foreach ($recent_visitors as $visitor): ?>
                 <li>
@@ -395,18 +397,6 @@ I am still self-taught, but I am not casual. I am building real software while l
 
 In two years, I have grown from beginner experimentation into a capable independent builder who can design, question, troubleshoot, and evolve a working application across the database, backend, frontend, infrastructure, and mobile layers.</p>
           </article>
-          <article>
-            <h3>Training</h3>
-            <p>Training is where the philosophy becomes physical.
-
-My approach is built around strength, mobility, consistency, and intelligent progression. I focus on helping people build a body that works better in real life: stronger legs, better balance, more confidence, improved posture, usable endurance, and the ability to keep participating in the things they care about.
-
-The goal is not punishment, ego lifting, or chasing trends. The goal is repeatable work done well. That means clear exercises, appropriate resistance, proper recovery, honest tracking, and steady progress over time.
-
-For older adults, returning exercisers, and people who need structure, training should feel challenging but understandable. You should know what you are doing, why you are doing it, and how it fits into the larger goal of staying capable, independent, and engaged.
-
-Training is also accountability. It gives the body a reason to adapt and gives the mind a reason to stay involved. Whether the work happens in a gym, at home, or through a structured platform like exFIT, the principle is the same: show up, do the work, recover, and come back stronger.</p>
-          </article>
         </div>
       </section>
 
@@ -418,6 +408,12 @@ Training is also accountability. It gives the body a reason to adapt and gives t
           </p>
           <p>
             Whether in business, fitness, or personal growth, the goal is the same: clarity of purpose, consistency in practice, and courage to act.
+          </p>
+          <p>
+            Training is where that philosophy becomes physical. My approach is built around strength, mobility, consistency, and intelligent progression: stronger legs, better balance, improved posture, usable endurance, and the confidence to keep participating in life.
+          </p>
+          <p>
+            The goal is not punishment, ego lifting, or chasing trends. The goal is repeatable work done well: clear exercises, appropriate resistance, proper recovery, honest tracking, and steady progress over time. Show up, do the work, recover, and come back stronger.
           </p>
         </div>
       </section>
@@ -453,22 +449,6 @@ Training is also accountability. It gives the body a reason to adapt and gives t
               <h3>GrayMentality Framework</h3>
               <p>Developed a modern philosophy for personal and professional growth, emphasizing clarity and courage.</p>
             </article>
-          </div>
-        </div>
-      </section>
-
-      <section id="testimonials" class="testimonials-section">
-        <div class="panel">
-          <h2>Testimonials</h2>
-          <div class="testimonials-list">
-            <?php if ($testimonial): ?>
-              <blockquote>
-                <p>"<?php echo htmlspecialchars($testimonial['text'], ENT_QUOTES, 'UTF-8'); ?>"</p>
-                <cite>- <?php echo htmlspecialchars($testimonial['author'], ENT_QUOTES, 'UTF-8'); ?></cite>
-              </blockquote>
-            <?php else: ?>
-              <p>No testimonials are available right now.</p>
-            <?php endif; ?>
           </div>
         </div>
       </section>

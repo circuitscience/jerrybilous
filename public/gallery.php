@@ -83,7 +83,7 @@ $photo_count = count($images);
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Jerry Bilous family photo gallery." />
     <title>My Clan as of 2026 | Jerry Bilous</title>
-    <link rel="stylesheet" href="styles.css?v=24" />
+    <link rel="stylesheet" href="styles.css?v=27" />
   </head>
   <body>
     <nav class="nav-bar">

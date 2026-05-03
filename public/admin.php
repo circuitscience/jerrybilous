@@ -125,7 +125,7 @@ if ($logged_in && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Console | Jerry Bilous</title>
-    <link rel="stylesheet" href="styles.css?v=24" />
+    <link rel="stylesheet" href="styles.css?v=27" />
   </head>
   <body>
     <nav class="nav-bar">
