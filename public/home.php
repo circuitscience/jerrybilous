@@ -27,7 +27,7 @@ if (!isset($days_remaining, $latest_notes, $has_forsale_items)) {
     <title>Jerry Bilous | Practical systems for work and life</title>
     <link rel="icon" type="image/png" sizes="64x64" href="favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css?v=29" />
+    <link rel="stylesheet" href="styles.css?v=30" />
   </head>
   <body class="home-page">
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -123,6 +123,16 @@ if (!isset($days_remaining, $latest_notes, $has_forsale_items)) {
             <h3>Practical development</h3>
             <p>PHP, MySQL, Docker, automation, and legacy-system repair for small businesses and independent builders who need useful software.</p>
             <a href="freelance.php">View software services <span aria-hidden="true">→</span></a>
+          </article>
+          <article class="home-work-card">
+            <div class="home-card-topline">
+              <span class="home-card-number">04</span>
+              <span class="home-golf-mark" aria-hidden="true"><i></i></span>
+            </div>
+            <p class="home-card-label">Practice &amp; performance</p>
+            <h3>The pursuit of par</h3>
+            <p>Golf notes, practice ideas, swing work, course management, and the patient pursuit of better decisions—one shot at a time.</p>
+            <a href="https://golf.jerrybilous.ca">Explore my golf work <span aria-hidden="true">→</span></a>
           </article>
         </div>
       </section>

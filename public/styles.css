@@ -1931,7 +1931,7 @@ html {
 
 .home-work-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -1972,7 +1972,8 @@ html {
 }
 
 .home-card-topline img,
-.home-code-mark {
+.home-code-mark,
+.home-golf-mark {
   width: 52px;
   height: 52px;
   border: 1px solid rgba(255, 255, 255, 0.11);
@@ -1991,6 +1992,42 @@ html {
   color: var(--home-purple);
   font-size: 0.92rem;
   font-weight: 900;
+}
+
+.home-golf-mark {
+  position: relative;
+  display: block;
+}
+
+.home-golf-mark::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  bottom: 10px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--home-orange);
+  border-radius: 50%;
+}
+
+.home-golf-mark::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  left: 25px;
+  width: 2px;
+  height: 25px;
+  background: #dedce4;
+}
+
+.home-golf-mark i {
+  position: absolute;
+  top: 9px;
+  left: 27px;
+  width: 12px;
+  height: 8px;
+  background: var(--home-purple);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 
 .home-card-number {
